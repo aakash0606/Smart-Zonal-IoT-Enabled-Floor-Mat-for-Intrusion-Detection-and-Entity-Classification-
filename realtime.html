@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>IntruMat — Super Debug Realtime Viewer + Predicted Note</title>
+<link rel="stylesheet" href="css/realtime.css">
+<!-- Chart.js (optional, kept for compatibility if earlier pages used it) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:12px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div>
+        <h1>IntruMat — Super Debug Realtime Viewer</h1>
+        <div class="muted">This page auto-checks connectivity, auth, permissions, and searches likely DB paths for numeric sensor values.</div>
+      </div>
+
+      <!-- PREDICTION BOX (visible in header) -->
+      <div id="predBox" class="predBox" title="Predicted note value (update with window.updatePredictedNote(value))">
+        <div class="predLabel">Predicted note</div>
+        <div id="predValue" class="predValue">—</div>
+        <div id="predHint" class="predHint">last updated: —</div>
+      </div>
+    </div>
+
+    <div style="text-align:right">
+      <div id="status" class="small">Initializing…</div>
+      <div style="height:6px"></div>
+      <div class="small" id="lastAction">—</div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- LEFT: controls & diagnostics -->
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="retryAuthBtn">(Re)try anonymous sign-in</button>
+          <button id="stopListenerBtn">Stop listener</button>
+        </div>
+        <div style="height:8px"></div>
+        <div class="small">Auth status</div>
+        <div id="authStatus" class="muted" style="margin-top:6px">Not signed in yet</div>
+        <div style="height:10px"></div>
+        <div class="small">Quick diagnostics</div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="runDiagBtn">Run diagnostics (auto)</button>
+          <button id="testGetAllBtn">One-time GET on root</button>
+          <button id="testPathsBtn">GET multiple common paths</button>
+        </div>
+        <div style="height:8px"></div>
+        <div id="diagOutput" style="margin-top:8px"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div class="small">Manual path test</div>
+        <div style="height:8px"></div>
+        <input id="manualPath" placeholder="Enter path to test (e.g. / or sensors or zones/zone1)" style="width:100%;box-sizing:border-box"/>
+        <div style="height:8px"></div>
+        <div style="display:flex;gap:8px">
+          <button id="manualGetBtn">GET once</button>
+          <button id="manualListenBtn">Listen (onValue)</button>
+        </div>
+        <div style="height:10px"></div>
+        <div class="small">Last manual result</div>
+        <pre id="manualResult">{ }</pre>
+      </div>
+
+      <div class="card">
+        <div class="small">Common causes & quick fixes</div>
+        <ol style="font-size:13px;margin-top:8px">
+          <li>If you see <strong>PERMISSION_DENIED</strong> — open Firebase Console → Realtime Database → Rules. For testing paste:
+            <pre>{ "rules": { ".read": true, ".write": false } }</pre>
+            (Don't keep write:true in production.)
+          </li>
+          <li>If anonymous auth fails, enable Anonymous sign-in in Firebase Console → Authentication → Sign-in method → Anonymous (toggle ON).</li>
+          <li>Make sure <code>databaseURL</code> exactly matches your database (copy from Firebase Console → Realtime Database → Data → URL). Region & format matter.</li>
+          <li>If snapshot is empty, check your device code — maybe it writes under a child path like <code>/devices/DEVICE_ID</code> or <code>/readings</code>.</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- RIGHT: outputs -->
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><div class="small">Realtime listener snapshot (root)</div></div>
+          <div style="display:flex;gap:8px">
+            <button id="exportSnapshotBtn">Export snapshot</button>
+            <button id="clearOutputBtn">Clear</button>
+          </div>
+        </div>
+        <div style="height:8px"></div>
+        <pre id="rawJson">{ waiting: "listener not started" }</pre>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div class="small">Flattened numeric keys found (auto-detect)</div>
+        <div style="height:8px"></div>
+        <table>
+          <thead><tr><th>Path</th><th style="width:120px">Group</th><th style="width:120px">Value</th></tr></thead>
+          <tbody id="numericTable"><tr><td colspan="3" class="muted">No data yet</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="small">Raw error / debug log</div>
+        <pre id="debugLog">{ }</pre>
+      </div>
+    </div>
+  </div>
+
+<script type="module" src="js/realtime.js"></script>
+</body>
+</html>
